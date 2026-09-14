@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="om">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Qopheessaa Gaaffii - Barsiisaa</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f1f4f6;color:#222}
+header{background:#176b45;color:#fff;text-align:center;padding:18px}
+.container{max-width:760px;margin:auto;padding:12px}.card{background:#fff;padding:18px;margin:12px 0;border-radius:16px;box-shadow:0 3px 12px #0001}
+input,textarea,select{width:100%;padding:12px;margin:6px 0 12px;border:1px solid #ccc;border-radius:9px;font-size:16px}
+textarea{min-height:90px}button{width:100%;padding:12px;margin:5px 0;border:0;border-radius:9px;background:#176b45;color:#fff;font-size:16px}
+.secondary{background:#555}.danger{background:#c62828}.edit{background:#2367a5}
+.nav{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.nav button{font-size:14px}
+.hidden{display:none}.box{border:1px solid #ddd;padding:12px;margin:10px 0;border-radius:12px}.good{color:#16833f;font-weight:bold}
+.stat{display:flex;gap:8px}.stat div{flex:1;background:#f7f7f7;padding:12px;border-radius:10px;text-align:center}
+</style>
+</head>
+<body>
+<header><h1>📝 Qopheessaa Gaaffii</h1><p>Gaaffii qopheessi • Barattootaaf qoodi • Bu'aa ilaali</p></header>
+<div class="container">
+
+<div class="nav">
+<button onclick="showTab('questions')">📝 Gaaffii</button>
+<button onclick="showTab('students')">👥 Barattoota</button>
+<button onclick="showTab('assign')">📤 Qoodi</button>
+</div>
+
+<section id="questions">
+<div class="card">
+<h2 id="formTitle">➕ Gaaffii Haaraa</h2>
+<label>Mata-duree</label>
+<select id="subject"><option>Salaata</option><option>Aqiidaa</option><option>Hadiisa</option><option>Qur'aana</option><option>Fiqhii</option><option>Seenaa Islaamaa</option><option>Kan biraa</option></select>
+<label>Gaaffii</label><textarea id="question" placeholder="Gaaffii kee barreessi..."></textarea>
+<label>A</label><input id="a" placeholder="Deebii A"><label>B</label><input id="b" placeholder="Deebii B">
+<label>C</label><input id="c" placeholder="Deebii C"><label>D</label><input id="d" placeholder="Deebii D">
+<label>Deebii sirrii</label><select id="correct"><option value="0">A</option><option value="1">B</option><option value="2">C</option><option value="3">D</option></select>
+<button onclick="saveQuestion()" id="saveBtn">💾 Kuusi</button><button onclick="cancelEdit()" id="cancelBtn" class="secondary hidden">↩️ Dhiisi</button>
+</div>
+<div class="card"><h2>📚 Gaaffiiwwan Koo</h2><div class="stat"><div>Walumaa<br><b id="qCount">0</b></div><div>Filatame<br><b id="fCount">0</b></div></div>
+<select id="filter" onchange="renderQuestions()"><option value="all">Mata-duree hunda</option><option>Salaata</option><option>Aqiidaa</option><option>Hadiisa</option><option>Qur'aana</option><option>Fiqhii</option><option>Seenaa Islaamaa</option><option>Kan biraa</option></select>
+<div id="questionList"></div></div>
+</section>
+
+<section id="students" class="hidden">
+<div class="card"><h2>👤 Barataa Dabali</h2><input id="studentName" placeholder="Maqaa barataa"><input id="studentId" placeholder="ID / lakkoofsa (filannoo)"><button onclick="addStudent()">➕ Barataa Kuusi</button></div>
+<div class="card"><h2>👥 Barattoota Koo</h2><div id="studentList"></div></div>
+</section>
+
+<section id="assign" class="hidden">
+<div class="card"><h2>📤 Gaaffii Namaaf Qoodi</h2>
+<label>Barataa</label><select id="studentSelect"></select>
+<label>Mata-duree</label><select id="assignSubject" onchange="updateAvailable()"><option value="all">Hunda</option><option>Salaata</option><option>Aqiidaa</option><option>Hadiisa</option><option>Qur'aana</option><option>Fiqhii</option><option>Seenaa Islaamaa</option><option>Kan biraa</option></select>
+<label>Gaaffii meeqa?</label><input id="assignCount" type="number" min="1" placeholder="Fakkeenya: 10">
+<p>Gaaffii jiran: <b id="available">0</b></p>
+<button onclick="assign()">📤 Gaaffii Qoodi</button><div id="assignResult"></div>
+</div>
+<div class="card"><h2>📋 Qoodinsa Duraanii</h2><div id="assignmentList"></div></div>
+</section>
+
+<script>
+let questions=JSON.parse(localStorage.getItem('myQuestions')||'[]');
+let students=JSON.parse(localStorage.getItem('myStudents')||'[]');
+let assignments=JSON.parse(localStorage.getItem('myAssignments')||'[]');
+let editIndex=-1;
+
+function showTab(id){['questions','students','assign'].forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==id));if(id==='assign'){fillStudents();updateAvailable();renderAssignments()}}
+
+function saveQuestion(){
+ let q=document.getElementById('question').value.trim(), answers=['a','b','c','d'].map(x=>document.getElementById(x).value.trim());
+ if(!q||answers.some(x=>!x)){alert('Maaloo gaaffii fi A-D guuti.');return}
+ let item={subject:subject.value,question:q,answers,correct:Number(correct.value)};
+ if(editIndex<0) questions.push(item); else {questions[editIndex]=item;editIndex=-1}
+ localStorage.setItem('myQuestions',JSON.stringify(questions));clearForm();renderQuestions();alert('✅ Gaaffiin kuufameera.')
+}
+function clearForm(){question.value='';['a','b','c','d'].forEach(x=>document.getElementById(x).value='');correct.value='0';formTitle.innerText='➕ Gaaffii Haaraa';saveBtn.innerText='💾 Kuusi';cancelBtn.classList.add('hidden')}
+function editQuestion(i){let q=questions[i];editIndex=i;subject.value=q.subject;question.value=q.question;['a','b','c','d'].forEach((x,n)=>document.getElementById(x).value=q.answers[n]);correct.value=q.correct;formTitle.innerText='✏️ Sirreessi';saveBtn.innerText='💾 Jijjiirama Kuusi';cancelBtn.classList.remove('hidden');showTab('questions');scrollTo(0,0)}
+function cancelEdit(){editIndex=-1;clearForm()}
+function deleteQuestion(i){if(confirm('Gaaffii kana haquu barbaaddaa?')){questions.splice(i,1);localStorage.setItem('myQuestions',JSON.stringify(questions));renderQuestions()}}
+function renderQuestions(){let filter=document.getElementById('filter').value,list=document.getElementById('questionList');list.innerHTML='';qCount.innerText=questions.length;let arr=questions.map((q,i)=>({q,i})).filter(x=>filter==='all'||x.q.subject===filter);fCount.innerText=arr.length;if(!arr.length){list.innerHTML='<p>Gaaffiin hin jiru.</p>';return}arr.forEach(x=>{let q=x.q,b=document.createElement('div');b.className='box';b.innerHTML=`<b>${x.i+1}. ${safe(q.question)}</b><p>📚 ${safe(q.subject)}</p><p>A. ${safe(q.answers[0])}</p><p>B. ${safe(q.answers[1])}</p><p>C. ${safe(q.answers[2])}</p><p>D. ${safe(q.answers[3])}</p><p class="good">✅ Sirrii: ${'ABCD'[q.correct]}</p><button class="edit" onclick="editQuestion(${x.i})">✏️ Sirreessi</button><button class="danger" onclick="deleteQuestion(${x.i})">🗑️ Haqi</button>`;list.appendChild(b)})}
+function safe(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+
+function addStudent(){let name=studentName.value.trim(),id=studentId.value.trim();if(!name){alert('Maqaa barataa galchi.');return}students.push({name,id});localStorage.setItem('myStudents',JSON.stringify(students));studentName.value='';studentId.value='';fillStudents();alert('✅ Barataan kuufameera.')}
+function deleteStudent(i){if(confirm('Barataa kana haquu barbaaddaa?')){students.splice(i,1);localStorage.setItem('myStudents',JSON.stringify(students));fillStudents()}}
+function fillStudents(){let sel=studentSelect;sel.innerHTML=students.length?'':'<option>Barataan hin jiru</option>';students.forEach((s,i)=>{let o=document.createElement('option');o.value=i;o.textContent=s.name+(s.id?' — '+s.id:'');sel.appendChild(o)});let list=studentList;list.innerHTML=students.length?'':'<p>Barataan hin jiru.</p>';students.forEach((s,i)=>{let b=document.createElement('div');b.className='box';b.innerHTML=`👤 <b>${safe(s.name)}</b>${s.id?' — '+safe(s.id):''}<button class="danger" onclick="deleteStudent(${i})">🗑️ Haqi</button>`;list.appendChild(b)})}
+function updateAvailable(){let sub=assignSubject.value;available.innerText=questions.filter(q=>sub==='all'||q.subject===sub).length}
+function assign(){if(!students.length){alert('Jalqaba barataa dabali.');return}let si=Number(studentSelect.value),sub=assignSubject.value,n=Number(assignCount.value);let pool=questions.filter(q=>sub==='all'||q.subject===sub);if(!n||n<1||n>pool.length){alert('Lakkoofsa gaaffii sirrii galchi.');return}let chosen=[...pool].sort(()=>Math.random()-.5).slice(0,n),item={student:students[si].name,subject:sub,count:n,questions:chosen,date:new Date().toLocaleString()};assignments.unshift(item);localStorage.setItem('myAssignments',JSON.stringify(assignments));assignResult.innerHTML=`<p class="good">✅ ${safe(item.student)}f gaaffii ${n} qoodameera.</p>`;renderAssignments()}
+function renderAssignments(){let list=assignmentList;list.innerHTML=assignments.length?'':'<p>Qoodinsi hin jiru.</p>';assignments.forEach((x,i)=>{let b=document.createElement('div');b.className='box';b.innerHTML=`👤 <b>${safe(x.student)}</b><br>📚 ${safe(x.subject)}<br>📝 Gaaffii: ${x.count}<br><small>${safe(x.date)}</small><button onclick="downloadAssignment(${i})">📥 Faayila Baasi</button><button class="danger" onclick="deleteAssignment(${i})">🗑️ Haqi</button>`;list.appendChild(b)})}
+function deleteAssignment(i){if(confirm('Qoodinsa kana haquu barbaaddaa?')){assignments.splice(i,1);localStorage.setItem('myAssignments',JSON.stringify(assignments));renderAssignments()}}
+function downloadAssignment(i){let x=assignments[i],txt=`BARATAA: ${x.student}\nMATA-DUREE: ${x.subject}\nGAAFFII: ${x.count}\n\n`;x.questions.forEach((q,n)=>txt+=`${n+1}. ${q.question}\nA. ${q.answers[0]}\nB. ${q.answers[1]}\nC. ${q.answers[2]}\nD. ${q.answers[3]}\n\n`);let blob=new Blob([txt],{type:'text/plain;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='gaaffii-'+x.student.replace(/\s+/g,'-')+'.txt';a.click();URL.revokeObjectURL(a.href)}
+
+renderQuestions();fillStudents();updateAvailable();renderAssignments();
+</script>
+</body>
+</html>
